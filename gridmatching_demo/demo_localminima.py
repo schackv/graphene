@@ -7,7 +7,6 @@ Created on Sun Jul 25 18:49:53 2014
 @author: schackv
 """
 
-import numpy as np
 from gridmatching import *
 import matplotlib.pyplot as plt
 
@@ -26,6 +25,9 @@ def demo_localminima():
     # Get local minima  
     extrema, contrast_enhanced, si = lattice.hexagonal_centers(im, lp.t)
 
+    print('{:g} initial points found'.format(len(extrema)))
+    print(extrema)
+    
     # Show steps
     fig, ax = plt.subplots(nrows=1,ncols=3)
     plt.sca(ax[0])
@@ -36,15 +38,9 @@ def demo_localminima():
     plt.title('Contrast enhanced')
     plt.sca(ax[2])
     plt.matshow(im, fignum=False, cmap=plt.cm.gray)
-    y,x = zip(*extrema)
-    plt.plot(x,y,'o',ms=3)
+    plt.plot(extrema[:,0],extrema[:,1],'o',ms=3)
     plt.axis('image')
-    plt.show()
-    
-    print(extrema)
-    
-    
-    
+    plt.show(block=True)
     
 
 if __name__=='__main__':

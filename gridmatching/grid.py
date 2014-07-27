@@ -26,15 +26,27 @@ class Grid:
     def translate(self,deltaxy):
         self.xy += deltaxy
 
-
            
         
-        
-""" Implements a triangular grid structure"""
 class TriangularGrid(Grid):
+    """ Implements a triangular grid structure.
+    """
+        
+    def resolve_edges(self):
+        """ Resolve the edges in the current grid using the Delaunay triangulation.
+        """
+        dt = Delaunay(self.xy)
+        
+        self.edges = tri_edges(dt.simplices)
+        return self.edges
+        
+
+class SimulatedTriangularGrid(TriangularGrid):
+    """Represents a triangular grid with a given number of rows and columns.
     
-    
-    def __init__(self,rows,cols,t):
+    Inherits TriangularGrid.
+    """
+    def __init__(self, rows,cols, t):
         self.t = t      # Hexagonal side length
         # Generate centers
         xy = []
@@ -43,14 +55,6 @@ class TriangularGrid(Grid):
                 xy.append(center_position(i,j,t))
         xy = np.vstack(xy)
         super().__init__(xy)
-        
-        
-    """ Resolve the edges in the current grid using the Delaunay triangulation"""
-    def resolve_edges(self):
-        dt = Delaunay(self.xy)
-        
-        self.edges = tri_edges(dt.simplices)
-        return self.edges
         
 
 def tri_edges(simplices):
