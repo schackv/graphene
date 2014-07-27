@@ -13,12 +13,16 @@ from gridmatching import *
 import matplotlib.pyplot as plt
 
 
-
-
 def demo_latticeinfo():
+    """Read an image, retrieve metadata, show the image, estimate parameters 
+    of the lattice using Fourier analysis and visualize the estimates.
+    """
+    
     ## Read DM3 image
     DM3 = io.dm3image('graphene_regular.dm3')
-    im = imtools.crop(DM3.image(), 701, 1700, 601, 1600 )   # Use small region to illustrate
+    im = DM3.image()
+    pixelsize, unit = DM3.pixelsize()
+    print('Scale according to metadata = {:8f} {:s} per pixel'.format(pixelsize,unit))
     
     # Show image
     fig = plt.figure(figsize=(10,10))    
@@ -28,7 +32,7 @@ def demo_latticeinfo():
     ## Estimate parameters of lattice
     lp = lattice.parameters()
     lp.compute(im,options.lattice)
-    print('Hexagonal side length = {:8f}'.format(lp.t))
+    print('Estimated hexagonal side length in pixels = {:8f}'.format(lp.t))
     print('Rotation in Fourier space = {:4f} radians = {:2f} degrees'.format(lp.theta0, np.rad2deg(lp.theta0)))
         
     # Show lattice power spectrum with found maxima and visualize angle

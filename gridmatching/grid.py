@@ -5,11 +5,15 @@ Created on Wed Jun 25 13:33:34 2014
 @author: schackv
 """
 import numpy as np
+from scipy.spatial import Delaunay
 
+"""Defines a Grid superclass, consisting of a set of points and a set
+of functions to manipulate these points"""
 class Grid:
     
     def __init__(self, xy):
         self.xy = xy
+        self.edges = []     # Initialize edges as empty
         
         
     """ Add zero-mean Gaussian random noise to the grid points """
@@ -21,9 +25,14 @@ class Grid:
         
     def translate(self,deltaxy):
         self.xy += deltaxy
+
+
+           
         
-""" Implements the triangular grid structure"""
+        
+""" Implements a triangular grid structure"""
 class TriangularGrid(Grid):
+    
     
     def __init__(self,rows,cols,t):
         self.t = t      # Hexagonal side length
@@ -34,6 +43,36 @@ class TriangularGrid(Grid):
                 xy.append(center_position(i,j,t))
         xy = np.vstack(xy)
         super().__init__(xy)
+        
+        
+    """ Resolve the edges in the current grid using the Delaunay triangulation"""
+    def resolve_edges(self):
+        dt = Delaunay(self.xy)
+        
+        self.edges = tri_edges(dt.simplices)
+        return self.edges
+        
+
+def tri_edges(simplices):
+    edges = set()
+
+    def add_edge(i, j):
+        """Add a line between the i-th and j-th points, if not in the list already"""
+        if (i, j) in edges or (j, i) in edges:
+            # already added
+            return
+        edges.add( (i, j) )
+
+    # loop over triangles: 
+    # ia, ib, ic = indices of corner points of the triangle
+    for ia, ib, ic in simplices:
+        add_edge(ia, ib)
+        add_edge(ib, ic)
+        add_edge(ic, ia)
+    
+    return edges
+        
+        
         
 """ Get the position of the hexagon center at a given row and column idx"""
 def center_position(row_idx,col_idx,t):
