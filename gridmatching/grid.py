@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 """
+Contains abstractions and implementations of a grid structure.
+
 Created on Wed Jun 25 13:33:34 2014
 
 @author: schackv
 """
 import numpy as np
 from scipy.spatial import Delaunay
+from scipy.linalg import norm
 
-"""Defines a Grid superclass, consisting of a set of points and a set
+"""Defines a Grid base class, consisting of a set of points and a set
 of functions to manipulate these points"""
 class Grid:
     
@@ -15,7 +18,9 @@ class Grid:
         self.xy = xy
         self.edges = []     # Initialize edges as empty
         
-        
+    def resolve_edges(self):
+        raise NotImplementedError()
+    
     """ Add zero-mean Gaussian random noise to the grid points """
     def add_noise(self,noise_std):
         self.xy += np.random.randn(*self.xy.shape)*noise_std
@@ -26,6 +31,8 @@ class Grid:
     def translate(self,deltaxy):
         self.xy += deltaxy
 
+    def line_collection(self):
+        return np.dstack((self.xy[list(self.edges),0],self.xy[list(self.edges),1]))
            
         
 class TriangularGrid(Grid):
@@ -56,8 +63,23 @@ class SimulatedTriangularGrid(TriangularGrid):
         xy = np.vstack(xy)
         super().__init__(xy)
         
+    def resolve_edges(self,remove_long=True):
+        super().resolve_edges()
+        
+        if remove_long:
+            
+            # Remove too long edges
+            E = self.edges
+            xy1 = self.xy[E[:,0],:]
+            xy2 = self.xy[E[:,1],:]
+            lengths = [norm(x1-x2) for x1, x2 in zip(xy1,xy2)]
+            idx = lengths < 1.1*np.sqrt(3)*self.t
+            self.edges = E[idx,:]
+            
+        
 
 def tri_edges(simplices):
+    """Return a list of unique edges representing the simplices."""
     edges = set()
 
     def add_edge(i, j):
@@ -74,13 +96,12 @@ def tri_edges(simplices):
         add_edge(ib, ic)
         add_edge(ic, ia)
     
-    return edges
-        
+    return np.array(list(edges))
         
         
 """ Get the position of the hexagon center at a given row and column idx"""
 def center_position(row_idx,col_idx,t):
-    x = t + col_idx*t
+    x = 1.5* t*(1 + col_idx)
     y = tri_sidelength(t) * row_idx
     if col_idx % 2 == 0:    # Even rows
         y += 0.5*tri_sidelength(t)

@@ -6,19 +6,22 @@ Created on Wed Jun 25 11:30:28 2014
 """
 
 import numpy as np
-import grid
-PLOT = True
-""" 
-Simulate an image with bright dots in the centers of hexagons with side length t.
-"""
+from . import grid
+#PLOT = True
+
 def simulate_image(rows,cols,t,theta=0,sigma_noise=0):
+    """ 
+    Simulate an image with bright dots in the centers of hexagons with side length t.
+    """
     
     # Generate a grid and rotate
-    G = grid.TriangularGrid(rows,cols,t)
+    G = grid.SimulatedTriangularGrid(rows,cols,t)
+    G.resolve_edges(remove_long=True)
     G.rotate(theta) # Rotate points around center
     G.translate(-np.min(G.xy,axis=0) + t)     # add extra margin
+    
     G.add_noise(sigma_noise)
-    E = G.resolve_edges()
+    
     sigma = 0.25*t   # St.d. of gaussian kernel for smoothing the image
         
     # Generate image from centers
@@ -28,7 +31,11 @@ def simulate_image(rows,cols,t,theta=0,sigma_noise=0):
     im = np.zeros(xv.shape)
     for ctr in G.xy:
         vals = np.exp(- ( (xv-ctr[0])**2 + (yv-ctr[1])**2) /sigma**2)
-        im += vals        
+        im += vals
+    
+    im = 1-im
+    
+    return im, G
         
 
 if __name__ == '__main__':
