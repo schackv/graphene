@@ -60,7 +60,8 @@ class GridEnergyDefinition():
     
     def observation_model(self):
         raise NotImplementedError()
-
+       
+       
 class AdaptiveGrid(GridEnergyDefinition):
     """Implements an adaptive grid, i.e., a grid that can accommodate 
     spatially changing averages in node-to-node distance.
@@ -79,15 +80,11 @@ class AdaptiveGrid(GridEnergyDefinition):
         arcs                Narcs x 2 (indices into xy)
         arc_neighborhood    List of length Narcs with lists of neighbors (indices into arcs).
         """
-        
-#        narcs = self.edges.shape[0]
         # Arc lengths
         arc_lengths = np.sqrt( np.sum( (xy[self.edges[:,0],:] - xy[self.edges[:,1],:])**2,axis=1))
         
         mean_lengths = [np.mean(arc_lengths[nb]) for nb in self.arc_to_arc]
-#        mean_lengths = np.empty(narcs)
-#        for idx, nbs in enumerate(self.arc_to_arc):
-#            mean_lengths[idx] = np.mean(arc_lengths[nbs])
+
 #            
         return np.array(mean_lengths)
         
@@ -131,10 +128,29 @@ class AdaptiveGrid(GridEnergyDefinition):
         xy = np.fmin(xy, [n-1, m-1])
         xy = np.fmax(xy, [0,0])
         
-        U = [self.im[y,x] for x,y in np.round(xy)]
+        values = [self.im[y,x] for x,y in np.round(xy)]
         
-        return np.array(U)
+        return np.array(values)
 
+
+class FixedGrid(AdaptiveGrid):
+    """Implements a fixed grid, i.e., a grid that expects a the same distance
+    between nodes throughout the grid.
+    
+    This class inherits and leverages the behavior of AdaptiveGrid, but rather than
+    calculating the expected arc length around each arc, the fixed length is 
+    returned.
+    """
+
+    def __init__(self,im,expected_distance,edges,simplices):
+        super().__init__(im, edges, simplices)
+        self.expected_distance = np.array(expected_distance)
+        
+    def arc_prior(self,xy):
+        """Not used in this implementation."""
+        return self.expected_distance
+    
+    
 
 def take_step(xy):
     """Take a random step in one of eight directions for each point in xy."""
