@@ -32,19 +32,20 @@ class Grid:
         self.xy += deltaxy
 
     def line_collection(self):
-        return np.dstack((self.xy[list(self.edges),0],self.xy[list(self.edges),1]))
+        return line_collection(self.xy,self.edges)
            
         
 class TriangularGrid(Grid):
     """ Implements a triangular grid structure.
     """
         
-    def resolve_edges(self):
+    def resolve_edges(self, remove_long=True):
         """ Resolve the edges in the current grid using the Delaunay triangulation.
         """
         dt = Delaunay(self.xy)
         
         self.edges = tri_edges(dt.simplices)
+        self.simplices = dt.simplices
         return self.edges
         
 
@@ -67,7 +68,6 @@ class SimulatedTriangularGrid(TriangularGrid):
         super().resolve_edges()
         
         if remove_long:
-            
             # Remove too long edges
             E = self.edges
             xy1 = self.xy[E[:,0],:]
@@ -76,7 +76,8 @@ class SimulatedTriangularGrid(TriangularGrid):
             idx = lengths < 1.1*np.sqrt(3)*self.t
             self.edges = E[idx,:]
             
-        
+def line_collection(xy,edges):
+    return np.dstack((xy[list(edges),0],xy[list(edges),1]))
 
 def tri_edges(simplices):
     """Return a list of unique edges representing the simplices."""

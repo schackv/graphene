@@ -22,7 +22,7 @@ def simulate_image(rows,cols,t,theta=0,sigma_noise=0):
     
     G.add_noise(sigma_noise)
     
-    sigma = 0.25*t   # St.d. of gaussian kernel for smoothing the image
+    sigma = 0.5*t   # St.d. of gaussian kernel for smoothing the image
         
     # Generate image from centers
     max_xy = np.round(np.max(G.xy,axis=0) * 1.05)   # add five percent
