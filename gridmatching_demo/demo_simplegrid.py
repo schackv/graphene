@@ -21,8 +21,7 @@ def demo_simplegrid():
    
     t = 12
     ## Simulate small image
-    im, G = simulation.simulate_image(8,5,t,theta=0.4*np.pi )
-    print(G.xy)
+    im, G = simulation.simulate_image(10,5,t,theta=0.4*np.pi )
     
     # Show image with true grid overlaid
     plt.figure()
@@ -32,6 +31,7 @@ def demo_simplegrid():
     plt.gca().add_collection(lc)
     plt.colorbar()
     plt.axis('equal')
+    plt.axis('image')
     plt.show(block=False)
 
     # Translate the grid and add noise
@@ -51,7 +51,7 @@ def demo_simplegrid():
     plt.axis('image')
     
     # Setup an adaptive grid model
-    model = bgm.AdaptiveGrid(im, G.edges, G.simplices)  
+    model = bgm.AdaptiveGrid(im, G.edges, G.simplices) 
     xy_hat, E, history = bgm.fit_grid(im,G.xy, G.edges, coding_scheme=cs, beta=0, gridenergydefinition=model, opts=options.annealing )
     
     [print('{:.4f}'.format( norm(x1-x2) ) ) for x1, x2 in zip(xy_hat[G.edges[:,0]],xy_hat[G.edges[:,1]])]

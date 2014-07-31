@@ -7,6 +7,7 @@ Created on Wed Jun 25 11:30:28 2014
 
 import numpy as np
 from . import grid
+import scipy.ndimage.filters as filters
 #PLOT = True
 
 def simulate_image(rows,cols,t,theta=0,sigma_noise=0):
@@ -22,16 +23,30 @@ def simulate_image(rows,cols,t,theta=0,sigma_noise=0):
     
     G.add_noise(sigma_noise)
     
-    sigma = 0.5*t   # St.d. of gaussian kernel for smoothing the image
-        
+    sigma = 0.25*t   # St.d. of gaussian kernel for smoothing the image
+    
+    # Round for easier image generation
+    G.xy = np.round(G.xy)
+    pt_idx = G.xy[:,::-1].astype(int)
+    
     # Generate image from centers
     max_xy = np.round(np.max(G.xy,axis=0) * 1.05)   # add five percent
-    xv, yv = np.meshgrid(range(int(max_xy[0])),range(int(max_xy[1])))
+    im = np.zeros((int(max_xy[1]),int(max_xy[0])))    
+    im[pt_idx[:,0],pt_idx[:,1]] = 1.0
     
-    im = np.zeros(xv.shape)
-    for ctr in G.xy:
-        vals = np.exp(- ( (xv-ctr[0])**2 + (yv-ctr[1])**2) /sigma**2)
-        im += vals
+    # Convolve with Gaussian
+    im = filters.gaussian_filter(im, sigma)
+        
+#==============================================================================
+#     # Alternative approach
+#     xv, yv = np.meshgrid(range(int(max_xy[0])),range(int(max_xy[1])))
+#     
+#     im = np.zeros(xv.shape)
+#     for ctr in G.xy:
+#         vals = np.exp(- ( (xv-ctr[0])**2 + (yv-ctr[1])**2) /sigma**2)
+#         im += vals
+#==============================================================================
+    
     
     im = 1-im
     

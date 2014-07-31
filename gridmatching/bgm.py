@@ -12,6 +12,7 @@ Created on Sun Jul 27 22:26:56 2014
 import numpy as np
 from scipy.linalg import norm
 from . import grid
+from . import imtools
 
 class GridEnergyDefinition():
     """Defines a base class for implementations of energy minimization in grids.
@@ -20,36 +21,34 @@ class GridEnergyDefinition():
     def __init__(self, edges, simplices):
         """Initialize the class with a set of edges. Arc-to-arc and node-to-arc 
         neighborhoods are inferred from these edges and stored for later use.
+        
+        Arc-to-arc neighborhood is defined such that arcs part of the same simplex 
+        are neighbors.
+        Arc-to-node neighborhood is defined such that edges, where the node is at
+        one end, are neighbors to the node.
         """
         edges = np.sort(edges,axis=1)
         self.edges = edges
         
         N = np.max(edges[:])+1
         Narcs = edges.shape[0]
-        Nsimplices = simplices.shape[0]
 
         # Resolve node-to-arc neighborhood
         self.node_to_arc = [np.nonzero(np.any(edges==i,axis=1))[0] for i in range(N)]
         
-        # For each simplex, add all edges as neighbors for each others
+        # Resolve arc-to-arc neighborhood
         self.arc_to_arc = [set() for i in range(Narcs)]
-        for ia, ib, ic in simplices:
-            s_edges = np.sort([[ia, ib], \
-                                 [ia, ic], \
-                                 [ib, ic]],axis=1)
-            edge_ids = []   # indexes of the simplex's edges in 'edges'
-            for edge in s_edges:
-                edgeid = np.where( (edges[:,0]==edge[0]) & (edges[:,1]==edge[1]) )
-                if len(edgeid[0])>0:
-                    edge_ids.append(edgeid[0][0])   # Add first element only
-            
-            for eid in edge_ids:
-                self.arc_to_arc[eid] |= set(edge_ids)    # Add all edge_ids for this simplex to the current edge ( each arc has a set of neighboring arcs, therefore they are only added once )
-            
-        # Convert to numpy arrays
-        for idx, nbset in enumerate(self.arc_to_arc):
-            self.arc_to_arc[idx] = np.array(list(nbset))
-            
+        for s in simplices:
+            s_edges = np.sort([[s[0], s[1]], [s[0], s[2]], [s[1], s[2]]],axis=1)
+            aux = [np.nonzero((edges[:,0]==edge[0]) & (edges[:,1]==edge[1]))[0] for edge in s_edges]
+            edgeids_in_simplex = np.hstack(aux)     # Edges in this simplex
+
+            # Add to arc sets
+            for eid in edgeids_in_simplex:
+                self.arc_to_arc[eid] |= set(edgeids_in_simplex)
+                
+        self.arc_to_arc = [np.array(list(aa)) for aa in self.arc_to_arc]    # Convert to lists
+                   
         
         
     def arc_prior(self):
@@ -298,6 +297,7 @@ def fit_grid(im,xy,edges,coding_scheme=None,beta=0.5,gridenergydefinition=None, 
     If gridenergydefinition=None the standard model is chosen.
     """
     
+    im = (im-np.mean(im))/(np.std(im))
     
     if coding_scheme is None:
         coding_scheme = welsh_powell(edges)
