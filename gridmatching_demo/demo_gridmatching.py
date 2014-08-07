@@ -40,7 +40,7 @@ def demo_gridmatching():
     # Show initial grid
     fig = plt.figure()
     plt.plot(extrema[:,0],extrema[:,1],'.')
-    lc = mc.LineCollection(np.dstack((extrema[edges,0],extrema[edges,1])),colors='k')
+    lc = mc.LineCollection(np.dstack((extrema[G.edges,0],extrema[G.edges,1])),colors='k')
     plt.gca().add_collection(lc)
     plt.axis('image')
     plt.title('Initial grid')
@@ -48,6 +48,7 @@ def demo_gridmatching():
     
     
     ## Fine adjustment
+    cs = bgm.welsh_powell(G.edges)
     # TODO: Color-coding algorithm
     # TODO: 
     
