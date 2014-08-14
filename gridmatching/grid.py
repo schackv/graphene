@@ -9,17 +9,66 @@ Created on Wed Jun 25 13:33:34 2014
 import numpy as np
 from scipy.spatial import Delaunay
 from scipy.linalg import norm
+from scipy import sparse
+import itertools
 
 """Defines a Grid base class, consisting of a set of points and a set
 of functions to manipulate these points"""
 class Grid:
     
-    def __init__(self, xy):
+    def __init__(self, xy,edges=[]):
         self.xy = xy
-        self.edges = []     # Initialize edges as empty
+        self.edges = edges     # Initialize edges as empty
+        self.atoms = []
+        self.atom_edges = []
         
     def resolve_edges(self):
         raise NotImplementedError()
+        
+    def place_atoms(self):
+        if len(self.edges)==0:
+            raise NoEdgesException()
+        
+        # Get simplex-to-arc neighborhood as sparse matrix
+        self.edges = np.sort(self.edges,axis=1)
+        simplex_ids = []
+        edge_ids = []
+        for sid, s in enumerate(self.simplices):
+            s_edges = np.sort([[s[0], s[1]], [s[0], s[2]], [s[1], s[2]]],axis=1)
+            aux = [np.nonzero((self.edges[:,0]==edge[0]) & (self.edges[:,1]==edge[1]))[0] for edge in s_edges]
+            aux = np.hstack(aux)
+            edge_ids.append(aux)
+            simplex_ids.append(np.ones(len(aux))*sid)
+        simplex_ids = np.hstack(simplex_ids)
+        edge_ids = np.hstack(edge_ids)
+        
+        Ns = len(self.simplices)
+        Ne = len(self.edges)
+        simplex_to_arc = sparse.csc_matrix((np.ones(len(simplex_ids)),np.vstack((simplex_ids,edge_ids))),shape=(Ns,Ne))
+
+        # Use simplex-to-arc neighborhood to get simplex-to-simplex
+        simplex_to_simplex = []
+        for eid in range(Ne):
+            aux = simplex_to_arc[:,eid].nonzero()[0]
+            # Get length-2 combinations (i.e. pairs of simplices)
+            [simplex_to_simplex.append(comb) for comb in itertools.combinations(aux, 2)]
+        simplex_to_simplex = np.array(simplex_to_simplex)
+        
+        # One atom per simplex!
+        self.atoms = []
+        for s in self.simplices:
+            atom = np.mean(self.xy[s,:],axis=0)
+            self.atoms.append(atom)
+        self.atoms = np.vstack(self.atoms)
+        self.atom_edges = simplex_to_simplex # Same neighborhood as simplices
+            
+    def bondlengths_px(self):
+        if len(self.atoms)==0 or len(self.atom_edges)==0:
+            raise NoEdgesException()
+        
+        bondlengths_px = [norm(self.atoms[edge[0],:]-self.atoms[edge[1],:]) for edge in self.atom_edges]
+        return bondlengths_px
+
     
     """ Add zero-mean Gaussian random noise to the grid points """
     def add_noise(self,noise_std):
@@ -33,7 +82,9 @@ class Grid:
 
     def line_collection(self):
         return line_collection(self.xy,self.edges)
-           
+
+class NoEdgesException(Exception):
+    pass
         
 class TriangularGrid(Grid):
     """ Implements a triangular grid structure.

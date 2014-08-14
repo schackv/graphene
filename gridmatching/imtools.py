@@ -15,6 +15,11 @@ import skimage
 from matplotlib.pyplot import *
 
 
+def rgb_to_gray(rgb):
+    """Convert an rgb image to a gray scale image using the same weighting as Matlab."""
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.144])
+
+
 def blob_enhancement(im, blob_size):
     """Returns an image, where blob-sized blobs are enhanced. 
     Blobs are assumed to be darker than their surroundings here.

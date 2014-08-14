@@ -15,4 +15,4 @@ lattice = {'min_distance': 4,   # Size of window for peak detection in FFT space
 annealing = {'T0': 4,
              'Tend': 0.5,
              'reps': 4,
-             'nIt': 100}
+             'nIt': 50}
