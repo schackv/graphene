@@ -1,5 +1,5 @@
-gridmatching/dm3lib_v099.py
-gridmatching_demo/gridmatching
+graphene/dm3lib_v099.py
+graphene_demo/graphene
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

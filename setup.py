@@ -16,7 +16,7 @@ setup(
     license = 'MIT',
     url = 'http://compute.dtu.dk/~jsve',
     packages = find_packages(),
-    install_requires = ['numpy', 'scipy', 'matplotlib', 'dm3lib_v099','skimage'],
+    install_requires = ['numpy', 'scipy', 'matplotlib', 'dm3lib_v099','skimage','networkx'],
     long_description = read('README.md'),
     classifiers = [
         'Development Status :: 1 - Beta',
