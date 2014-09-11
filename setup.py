@@ -8,7 +8,7 @@ def read(fname):
 
 print(find_packages())
 setup(
-    name = 'gridmatching',
+    name = 'graphene',
     version = '0.1',
     author = 'Jacob Schack Vestergaard',
     author_email = 'jsve@dtu.dk',
