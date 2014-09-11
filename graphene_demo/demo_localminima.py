@@ -7,7 +7,7 @@ Created on Sun Jul 25 18:49:53 2014
 @author: schackv
 """
 
-from gridmatching import *
+from graphene import *
 import matplotlib.pyplot as plt
 
 

@@ -10,7 +10,7 @@ Created on Fri Jul 25 18:49:53 2014
 """
 
 import numpy as np
-from gridmatching import *
+from graphene import *
 import matplotlib.pyplot as plt
 from matplotlib import collections  as mc
 from scipy.linalg import norm
@@ -40,7 +40,7 @@ def demo_simplegrid():
     G.add_noise(1.5)
     
     # Coding scheme
-    cs = bgm.welsh_powell(G.edges)
+    cs = bgm.welsh_powell(G.edges())
     fig, ax = plt.subplots(2,2)
     plt.sca(ax[0,0])
     lc = mc.LineCollection(G.line_collection(),colors='k')
@@ -51,17 +51,21 @@ def demo_simplegrid():
     plt.axis('image')
     
     # Setup an adaptive grid model
-    model = bgm.AdaptiveGrid(im, G.edges, G.simplices) 
-    xy_hat, E, history = bgm.fit_grid(im,G.xy, G.edges, coding_scheme=cs, beta=0, gridenergydefinition=model, opts=options.annealing )
+    model = bgm.AdaptiveGrid(im, G.edges(), G.simplices) 
+    xy_hat, E, history = bgm.fit_grid(im,G.xy, G.edges(), coding_scheme=cs, beta=0, gridenergydefinition=model, opts=options.annealing )
+    G_fit = grid.TriangularGrid(xy_hat,G.edges())
     
-    [print('{:.4f}'.format( norm(x1-x2) ) ) for x1, x2 in zip(xy_hat[G.edges[:,0]],xy_hat[G.edges[:,1]])]
+    for e in G_fit.graph.edges_iter():
+        x1 = xy_hat[e[0],:]
+        x2 = xy_hat[e[1],:]
+        print('{:.4f}'.format( norm(x1-x2)))
     
     plt.sca(ax[0,1])
     plt.imshow(im,cmap=plt.cm.gray,interpolation='nearest')
-    lc = mc.LineCollection(grid.line_collection(xy_hat,G.edges),colors='k')
+    lc = mc.LineCollection(G_fit.line_collection(),colors='k')
     plt.gca().add_collection(lc)
     plt.scatter(G.xy[:,0],G.xy[:,1],c='b',s=30)
-    plt.scatter(xy_hat[:,0],xy_hat[:,1],c='r',s=50)    
+    plt.scatter(G_fit.xy[:,0],G_fit.xy[:,1],c='r',s=50)    
     plt.scatter(true_xy[:,0],true_xy[:,1],c='w',s=30)
     plt.axis('equal')
     plt.axis('image')

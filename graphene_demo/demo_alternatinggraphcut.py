@@ -10,25 +10,25 @@ Created on Fri Jul 25 18:49:53 2014
 """
 
 import numpy as np
-from gridmatching import *
+from graphene import *
 import matplotlib.pyplot as plt
 from matplotlib import collections  as mc
-from scipy.linalg import norm
-
 
 
 def demo_alternatinggraphcut():
     t = 12
     ## Simulate small image
-    im, G = simulation.simulate_image(10,20,t,theta=0.4*np.pi )
+    im, G = simulation.simulate_image(11,13,t,theta=0.4*np.pi )
     
     # Show grid overlaid image
+    fig, ax = plt.subplots(1,2)
+    plt.sca(ax[0])
     plt.imshow(im,cmap=plt.cm.gray)
+    plt.title('True grid')
     plotgrid(G)
-    plt.show()
     
-    # Add random points
-    Nnew = 100
+    # Add random, disturbing, points
+    Nnew = 15
     x_new = np.random.uniform(np.min(G.xy[:,0]),np.max(G.xy[:,0]), Nnew)
     y_new = np.random.uniform(np.min(G.xy[:,1]),np.max(G.xy[:,1]), Nnew )
     xy_new = np.vstack((x_new,y_new)).T
@@ -38,17 +38,18 @@ def demo_alternatinggraphcut():
     G.resolve_edges(remove_long=False)
     
     # Show this modified grid
+    plt.sca(ax[1])
     plotgrid(G)
+    plt.title('Modified/disturbed grid')
     plt.show()
     
     # Clean up using alternating graph cut
-    xy_hat, simplices_hat = graph.alternating_graphcut(G.xy,im,alpha=3,beta=2)
-    G_hat = grid.Grid.from_simplices(xy_hat,simplices_hat)
+    xy_hat, simplices_hat = alternating_graphcut.cleanup(G.xy,im,alpha=3,beta=2)
+    G_hat = grid.TriangularGrid.from_simplices(xy_hat,simplices_hat)
+    plt.figure()
     plotgrid(G_hat)
-    plt.show()
+    plt.show(block=True)
     
-#    print(xy_hat)
-#   print(simplices_hat)
     
 
 
@@ -56,6 +57,7 @@ def plotgrid(G):
     plt.plot(G.xy[:,0],G.xy[:,1],'.b')
     lc = mc.LineCollection(G.line_collection(),colors='k')
     plt.gca().add_collection(lc)
+    plt.axis('image')
    
     
 

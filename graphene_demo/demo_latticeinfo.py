@@ -9,7 +9,7 @@ Created on Fri Jul 25 18:49:53 2014
 """
 
 import numpy as np
-from gridmatching import *
+from graphene import *
 import matplotlib.pyplot as plt
 
 
@@ -44,7 +44,7 @@ def demo_latticeinfo():
     plt.plot(x,y,'o')
     plt.plot(np.array([0,xr])+w*0.5,np.array([0,yr])+h*0.5,'-xr')
     plt.axis('image')
-    plt.show()
+    plt.show(block=True)
     
     
 

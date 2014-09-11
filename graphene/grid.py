@@ -11,7 +11,7 @@ from scipy.spatial import Delaunay
 from scipy.linalg import norm
 from scipy import sparse
 import itertools
-from . import graph
+from . import graphtools
 import networkx as nx
 
 class Grid:
@@ -31,6 +31,10 @@ class Grid:
     def resolve_edges(self):
         raise NotImplementedError()
             
+
+    def edges(self):
+        return self.graph.edges()            
+    
     def edge_lengths(self):
         if self.graph.number_of_nodes()==0 or self.graph.number_of_edges()==0:
             raise NoEdgesException()
@@ -42,15 +46,17 @@ class Grid:
     
     """ Add zero-mean Gaussian random noise to the grid points """
     def add_noise(self,noise_std):
-        for n, attr in self.graph.nodes_iter(data=True):
-            attr['xy'] += np.random.randn(1,2)*noise_std
+        self.xy += np.random.randn(self.xy.shape[0],2)*noise_std
+#        for n, attr in self.graph.nodes_iter(data=True):
+#            attr['xy'] += np.random.randn(2)*noise_std
 
     def rotate(self,theta):
         self.xy = rotate_grid(self.xy,theta)
         
     def translate(self,deltaxy):
-        for n, attr in self.graph.nodes_iter(data=True):
-            attr['xy'] += deltaxy
+        self.xy += deltaxy
+#        for n, attr in self.graph.nodes_iter(data=True):
+#            attr['xy'] += deltaxy
 
     def line_collection(self):
         return line_collection(self.xy,self.graph.edges())
@@ -62,7 +68,7 @@ class TriangularGrid(Grid):
 
     @classmethod
     def from_simplices(cls, xy, simplices):
-        edges = graph.tri_edges(simplices)
+        edges = graphtools.tri_edges(simplices)
         g1 = cls(xy,edges)
         g1.simplices = simplices
         return g1
@@ -72,8 +78,7 @@ class TriangularGrid(Grid):
         triangulation. Three values of method can be chosen:
         """
         dt = Delaunay(self.xy)
-        self.graph.remove_edges_from(self.graph.edges_iter())
-        self.graph.add_edges_from(graph.tri_edges(dt.simplices))
+        super().__init__(dt.points,graphtools.tri_edges(dt.simplices))     # init as new graph
         self.simplices = dt.simplices
         return self.edges()
         
@@ -100,11 +105,19 @@ class SimulatedTriangularGrid(TriangularGrid):
             # TODO Also remove simplices!
             # Remove too long edges
             lengths = self.edge_lengths()
-            idx = lengths > 1.1*np.sqrt(3)*self.t
-            self.graph.remove_edges_from(self.graph.edges()[idx,:])
+            idx = lengths > 1.1*np.sqrt(3)*self.t       # Edges to remove
             
             
-def HexagonalGrid(Grid):
+            E = self.graph.edges()
+            [print(E[i]) for i in np.where(idx)[0]]
+            for i in np.where(idx)[0]:
+                self.graph.remove_edge(*E[i])    # Remove edge
+            
+            
+            
+            
+class HexagonalGrid(Grid):
+    
     
     def _simplex_to_arc_nbhood(simplices):
         """Get the simplex-to-arc adjacency matrix as a sparse matrix.
@@ -112,7 +125,7 @@ def HexagonalGrid(Grid):
         
         This is not pretty, but fairly rapid."""
         
-        edges = graph.tri_edges(simplices)
+        edges = graphtools.tri_edges(simplices)
 
         tri_edges = np.sort(edges,axis=1)   # Node with lowest id is first
         simplex_ids = []    # Simplex ids
@@ -137,13 +150,16 @@ def HexagonalGrid(Grid):
         """Create a hexagonal grid based on its dual, triangular, grid.
         Points are positioned as centers of each simplex.
         """
-        # TODO TODO TODO Implement this with new graph structure
+        
+        
         Ne = triGrid.graph.number_of_edges()
         if Ne==0:
             raise NoEdgesException()
+            
+        print('Constructing hexagonal grid from triangular ({} edges).'.format(Ne))
 
         # Get simplex-to-arc neighborhood as sparse matrix
-        simplex_to_arc = _simplex_to_arc_nbhood(triGrid.simplices)
+        simplex_to_arc = HexagonalGrid._simplex_to_arc_nbhood(triGrid.simplices)
         
         # Use simplex-to-arc neighborhood to get simplex-to-simplex
         simplex_to_simplex = []
@@ -160,19 +176,13 @@ def HexagonalGrid(Grid):
             xy.append(center)
         xy = np.vstack(xy)
 
-        cls.super().__init__(xy,simplex_to_simplex)
-        return cls
+        obj = cls(xy,edges=simplex_to_simplex)
+#        super().__init__(cls,xy=xy,edges=simplex_to_simplex)
         
-#        
-#        # One atom per simplex!
-#        cls.xy = []
-#        for s in triGrid.simplices:
-#            atom = np.mean(s.xy,axis=0)
-#            
-#            cls.xy.append(atom)
-#        cls.xy = np.vstack(cls.xy)
-#        cls.edges = triGrid.simplices.edges()
-#        self.atom_edges = simplex_to_simplex # Same neighborhood as simplices     
+        print('Hexagonal grid constructed with {} points'.format(obj.graph.number_of_nodes()))
+        return obj
+        
+
         
         
     

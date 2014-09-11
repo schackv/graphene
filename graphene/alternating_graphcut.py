@@ -16,9 +16,9 @@ import networkx as nx
 import numpy as np
 from scipy.spatial import Delaunay
 import copy
-from . import imtools
+from . import imtools, graphtools
 
-def alternating_graphcut(xy,im,alpha=3,beta=2):
+def cleanup(xy,im,alpha=3,beta=2):
     """Alternate between removing improbable simplices and improbable points."""
     
     numchange = np.Inf
@@ -32,8 +32,8 @@ def alternating_graphcut(xy,im,alpha=3,beta=2):
         N = xy_hat.shape[0]
         dt = Delaunay(xy_hat)
         
-        simplices = remove_improbable_triangles(dt.points,dt.simplices, dt.neighbors, alpha)
-        xy_hat = remove_improbable_points(dt.points,tri_edges(simplices),im_neg, beta)
+        simplices = _remove_improbable_triangles(dt.points,dt.simplices, dt.neighbors, alpha)
+        xy_hat = _remove_improbable_points(dt.points,graphtools.tri_edges(simplices),im_neg, beta)
         
         numchange = N - xy_hat.shape[0]
         it+=1
@@ -43,42 +43,40 @@ def alternating_graphcut(xy,im,alpha=3,beta=2):
     return xy_hat, simplices
         
         
-def create_graph(source_weights, terminal_weights, nbhood, beta,is_edges=False):
+def _create_graph(source_weights, terminal_weights, nbhood, beta,is_edges=False):
     """Creates a graph with one node per N source_weight, with the given 
     source_weight as capacity from source <--> node. 
     Node <--> node capacities are set to beta for the neighborhood defined by
     the N-long nbhood enumerable."""
     
-    
+    D = nx.DiGraph()
     # Set up edges with capacities
     sid = -1        # Id of source
     tid = -2        # Id of sink/terminal
-    edges = []
     labels = {}
     for id, (sw, tw, nbs) in enumerate(zip(source_weights, terminal_weights, nbhood)):
-        edges.append( (sid, id, {'capacity': sw} ))     # Source weights
-        edges.append( (id, tid, {'capacity': tw} ))     # Terminal weights
+        D.add_edge(sid, id, capacity=sw )     # Source weights
+        D.add_edge(id, tid, capacity=tw )     # Terminal weights
         labels[id] = '{}'.format(id)
         if not is_edges:
             for nb in nbs:
                 if nb<0:  # -1 codes for 'missing neighbor'
                     continue
-                edges.append( (id, nb, {'capacity': beta}))
+                D.add_edge(id, nb, capacity=beta)
                 
     if is_edges:    # if the neighborhood is specified as edges instead of a list of neighborhood
         for e in nbhood:
-            edges.append((e[0],e[1], {'capacity': beta}))
-            edges.append((e[1],e[0], {'capacity': beta}))
+            D.add_edge(e[0],e[1], capacity = beta)
+            D.add_edge(e[1],e[0], capacity =  beta)
             
     labels[sid] = r'S'
     labels[tid] = r'T'
-    D = nx.DiGraph()
-    D.add_edges_from(edges)
+    
     
     return D
     
         
-def remove_improbable_triangles(xy,tri,nbhood,alpha):
+def _remove_improbable_triangles(xy,tri,nbhood,alpha):
     
     mu = 60
     sigma = 0.85
@@ -87,52 +85,54 @@ def remove_improbable_triangles(xy,tri,nbhood,alpha):
     angles = np.rad2deg([minimum_angle(xy[T,:]) for T in tri])
 
     # Setup Terminal weights and edge weights
-    source, terminal = terminalweights(angles,mu,sigma)
+    source, terminal = _terminalweights(angles,mu,sigma)
     
     # Cut graph
-    D = create_graph(source,terminal, nbhood, alpha)   
-    R = nx.flow.ford_fulkerson(D,-1,-2)     # s/t cut
+    D = _create_graph(source,terminal, nbhood, alpha)   
+    cut_value, partition = nx.minimum_cut(D,-1,-2)
+    reachable, non_reachable = partition
+    reachable.discard(-1)   # Remove source
     
-    # Keep only the nodes connected to the source
-    to_keep = [r[1] for r in R.edges() if r[0]==-1]
-    tri = tri[to_keep,:]
+    # Keep only the nodes connected to the source    
+    tri = tri[list(reachable),:]
     
     return tri
     
-def remove_improbable_points(xy,edges,im, beta):
+def _remove_improbable_points(xy,edges,im, beta):
     
     mu = 1
-    sigma = 0.85
-    
+    sigma=0.15
+
     # Return intensities under the points
     val = imtools.image_interp(im,xy)
        
     # Setup terminal and edge weights
-    source, terminal = terminalweights(val,mu,sigma)
+    source, terminal = _terminalweights(val,mu,sigma)
     
-    # Cut graph
-    D = create_graph(source,terminal, edges, beta, is_edges=True)
+    # Setup graph 
+    D = _create_graph(source,terminal, edges, beta, is_edges=True)
     
     # Remove points with no neighbors (i.e., only connected to source and sink)
     deg = D.degree()
     to_remove = [p for p in deg if deg[p]==2 and p>=0]
     D.remove_nodes_from(to_remove)
     
-    R = nx.flow.ford_fulkerson(D,-1,-2)     # s/t cut
+    cut_value, partition = nx.minimum_cut(D,-1,-2)
+    reachable, non_reachable = partition
+    reachable.discard(-1)   # Remove source
     
     # Return resulting points
-    to_keep = [r[1] for r in R.edges() if r[0]==-1]
-    xy = xy[to_keep,:]
+    xy = xy[list(reachable),:]
     
     return xy
     
 
-def terminalweights(x,mu,sigma):
+def _terminalweights(x,mu,sigma):
     source_weights = (1-sigma) * np.sqrt(x**2)
     terminal_weights = sigma*np.sqrt((x-mu)**2)
     return source_weights, terminal_weights
     
-def edgeweights(edges,beta):
+def _edgeweights(edges,beta):
     return beta
     
     
@@ -170,22 +170,3 @@ def angle_between(v1, v2):
     return angle
     
 
-def tri_edges(simplices):
-    """Return a list of unique edges representing the simplices."""
-    edges = set()
-
-    def add_edge(i, j):
-        """Add a line between the i-th and j-th points, if not in the list already"""
-        if (i, j) in edges or (j, i) in edges:
-            # already added
-            return
-        edges.add( (i, j) )
-
-    # loop over triangles: 
-    # ia, ib, ic = indices of corner points of the triangle
-    for ia, ib, ic in simplices:
-        add_edge(ia, ib)
-        add_edge(ib, ic)
-        add_edge(ic, ia)
-    
-    return np.array(list(edges))

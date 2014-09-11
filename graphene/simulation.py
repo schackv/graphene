@@ -26,7 +26,7 @@ def simulate_image(rows,cols,t,theta=0,sigma_noise=0):
     sigma = 0.25*t   # St.d. of gaussian kernel for smoothing the image
     
     # Round for easier image generation
-    G.xy = np.round(G.xy)
+    G.xy = np.round(G.xy-np.min(G.xy,axis=0))   # Ensure that the grid is shifted to positive
     pt_idx = G.xy[:,::-1].astype(int)
     
     # Generate image from centers
