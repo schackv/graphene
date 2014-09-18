@@ -16,7 +16,9 @@ import networkx as nx
 import numpy as np
 from scipy.spatial import Delaunay
 import copy
+import logging
 from . import imtools, graphtools
+
 
 def cleanup(xy,im,alpha=3,beta=2):
     """Alternate between removing improbable simplices and improbable points."""
@@ -37,7 +39,7 @@ def cleanup(xy,im,alpha=3,beta=2):
         
         numchange = N - xy_hat.shape[0]
         it+=1
-        print('Alternating graphcut, iteration {}. Removed {} points.'.format(it,numchange))
+        logging.debug('Alternating graphcut, iteration {}. Removed {} points.'.format(it,numchange))
         
     # Setup graph with these points and simplices
     return xy_hat, simplices

@@ -15,20 +15,20 @@ import numpy as np
 from graphene import *
 import matplotlib.pyplot as plt
 
-
 from matplotlib import collections  as mc
-from scipy import misc
+
 import pickle
-import os
 
 
 def demo_gridmatching():
     
+    filename = 'graphene_regular.dm3'
+#    filename = r'E:\dtu\phd\graphene\simulated_images\Perfect-2_dE03eV_Cs-0002mm_df-3mm_0142.png'
     ## Read DM3 image
-    DM3 = io.dm3image('graphene_regular.dm3')
-    im = imtools.crop(DM3.image(),601,1100,601,1100)
-#    im = misc.imread(r'E:\dtu\phd\graphene\simulated_images\Perfect-2_dE03eV_Cs-0002mm_df-3mm_0142.png')
-#    im = imtools.rgb_to_gray(im.astype(np.float32)/255)
+    im = imtools.read_image(filename)
+    im = imtools.crop(im,601,1100,601,1100)
+    
+    # Make quadratic
     newsize = np.min( (im.shape[0],im.shape[1]) )
     im = im[0:newsize,0:newsize]
     
@@ -102,17 +102,11 @@ def demo_gridmatching():
     plt.sca(ax[0])
     plt.hist(lengths,64)
     plt.sca(ax[1])
-    xcdf, F = ecdf(lengths_nm)
+    xcdf, F = misc.ecdf(lengths_nm)
     plt.plot(xcdf,F)
     plt.show(block=True)
     
 
-    
-def ecdf(x):
-    sorted_x=np.sort( x )
-    yvals=np.arange(len(sorted_x))/float(len(sorted_x))
-    
-    return sorted_x, yvals
 
 if __name__=='__main__':
     demo_gridmatching()

@@ -30,7 +30,8 @@ class parameters:
 
         h,w = img.shape
         if h!=w:
-            raise NotImplementedError('Fourier analysis assumes a square image')        
+            new_size = np.min((h,w))
+            img = img[:new_size,:new_size]
 
         # Log-power analysis        
         self.PS = powerspectrum(img)
@@ -57,7 +58,6 @@ def _six_local_maxima(PS,opts):
     """Detect six local maxima in the power spectrum"""
     
     X = ndimage.filters.gaussian_filter(np.log(PS),1)   # Gaussian smoothing
-                    
     extrema = peak_local_max(X,**opts)
     
     adjusted_extrema = []

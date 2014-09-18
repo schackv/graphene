@@ -9,10 +9,10 @@ Created on Sun Jul 27 22:26:56 2014
 @author: schackv
 """
 
+import logging
 import numpy as np
-from scipy.linalg import norm
-from . import grid
-from . import imtools
+from copy import deepcopy
+
 
 class GridEnergyDefinition():
     """Defines a base class for implementations of energy minimization in grids.
@@ -162,7 +162,7 @@ def take_step(xy):
     xy_new = np.array([pt+steps[i] for pt, i in zip(xy,rndint)])
     return xy_new
 
-def simulated_annealing(xy, coding_scheme, beta, model, T0=4, Tend=0.5, reps=4,nIt=500):
+def simulated_annealing(xy, coding_scheme, beta, model, T0=4, Tend=0.5, reps=4,nIt=500,max_nz=5):
     """Simulated annealing of the N sites in xy divided into coding_scheme.
     The regularization parameter beta is used to weigh observation versus geometry.
     
@@ -174,6 +174,7 @@ def simulated_annealing(xy, coding_scheme, beta, model, T0=4, Tend=0.5, reps=4,n
     Tend    final temperature
     reps    number of repetitions on each temperature
     nIt     maximum number of iterations
+    max_nz  maximum number of iterations with zero accepted moves, before stopping
     """
     
     # Number of colors in coding scheme 
@@ -192,10 +193,11 @@ def simulated_annealing(xy, coding_scheme, beta, model, T0=4, Tend=0.5, reps=4,n
     ## Optimization
     T = T0
     it = 0
+    nz = 0      # Number of zero-moves in a row
     n_accepted = np.inf
     history = {'xy': [], 'energy': [], 'arcprior': []}
     
-    while (T>Tend) & (it<nIt):
+    while (T>Tend) & (it<nIt) & (nz<max_nz):
         it += 1
         
         n_accepted = 0
@@ -232,7 +234,12 @@ def simulated_annealing(xy, coding_scheme, beta, model, T0=4, Tend=0.5, reps=4,n
         history['energy'].append(np.sum(E))
         history['arcprior'].append(pA.copy())
             
-        print('Iteration {:g}. Number accepted = {:g}, energy = {:.8f}'.format(it, n_accepted,np.mean(E)))
+        logging.debug('Iteration {:g}. Number accepted = {:g}, energy = {:.8f}'.format(it, n_accepted,np.mean(E)))
+        
+        if n_accepted==0: 
+            nz+=1
+        else:
+            nz=0
         
         # Update arc prior
         pA = model.arc_prior(xy)
@@ -272,8 +279,6 @@ def welsh_powell(edges):
     grouping[:] = np.inf
     
     sort_order = degree.argsort()[::-1] # Sort descending
-    print(sort_order)
-#    sort_order = np.argsort(-degree)    
     for idx in sort_order:
         used_colors = grouping[neighbor_lists[idx]]
         for j in range(N):  # Find first color not used
@@ -283,7 +288,7 @@ def welsh_powell(edges):
     return grouping
     
     
-def fit_grid(im,xy,edges,coding_scheme=None,beta=0.5,gridenergydefinition=None, opts={}):
+def fit_grid(im,xy,edges,coding_scheme=None,beta=0.5,gridenergydefinition=None, anneal_opts={}):
     """Fit the grid defined by xy and edges to the image im.
     
     im is an m x n image matrix
@@ -305,7 +310,7 @@ def fit_grid(im,xy,edges,coding_scheme=None,beta=0.5,gridenergydefinition=None, 
     if gridenergydefinition is None:
         gridenergydefinition = AdaptiveGrid(im,edges)
         
-    xy_out, E, history = simulated_annealing(xy.copy(),coding_scheme,beta=beta,model=gridenergydefinition, **opts)
+    xy_out, E, history = simulated_annealing(deepcopy(xy),coding_scheme,beta=beta,model=gridenergydefinition, **anneal_opts)
     return xy_out, E, history
     
     

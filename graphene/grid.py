@@ -13,6 +13,7 @@ from scipy import sparse
 import itertools
 from . import graphtools
 import networkx as nx
+import logging
 
 class Grid:
     """Defines a Grid base class, consisting of a set of points and a set
@@ -26,8 +27,19 @@ class Grid:
         for id, pos in enumerate(xy):
             self.graph.add_node(id,xy=pos)
         self.graph.add_edges_from(edges)      
-        
        
+    @classmethod
+    def from_textfile(cls, filename):
+        """Grid constructor based on files."""
+        xy = np.loadtxt(filename + '.points')
+        edgelist = nx.read_edgelist(filename + '.edgelist',nodetype=int)
+        return cls(xy,edgelist.edges())
+
+    def write(self, filename):
+        """Write the grid to .point and .edgelist files."""
+        nx.write_edgelist(self.graph,filename + '.edgelist', data=False)
+        np.savetxt(filename + '.points',self.xy)
+        
     def resolve_edges(self):
         raise NotImplementedError()
             
@@ -58,8 +70,16 @@ class Grid:
 #        for n, attr in self.graph.nodes_iter(data=True):
 #            attr['xy'] += deltaxy
 
+    def plot(self,color='b',linecolor='k',markersize=3):
+        import matplotlib.pyplot as plt
+        from matplotlib import collections  as mc
+        plt.plot(self.xy[:,0],self.xy[:,1],'.',color=color,ms=markersize)
+        plt.gca().add_collection(mc.LineCollection(self.line_collection(),colors=linecolor))
+        plt.axis('image')
+
     def line_collection(self):
         return line_collection(self.xy,self.graph.edges())
+        
         
 
 class TriangularGrid(Grid):
@@ -109,7 +129,7 @@ class SimulatedTriangularGrid(TriangularGrid):
             
             
             E = self.graph.edges()
-            [print(E[i]) for i in np.where(idx)[0]]
+#            [logging.debug(E[i]) for i in np.where(idx)[0]]
             for i in np.where(idx)[0]:
                 self.graph.remove_edge(*E[i])    # Remove edge
             
@@ -156,7 +176,7 @@ class HexagonalGrid(Grid):
         if Ne==0:
             raise NoEdgesException()
             
-        print('Constructing hexagonal grid from triangular ({} edges).'.format(Ne))
+        logging.debug('Constructing hexagonal grid from triangular ({} edges).'.format(Ne))
 
         # Get simplex-to-arc neighborhood as sparse matrix
         simplex_to_arc = HexagonalGrid._simplex_to_arc_nbhood(triGrid.simplices)
@@ -179,7 +199,7 @@ class HexagonalGrid(Grid):
         obj = cls(xy,edges=simplex_to_simplex)
 #        super().__init__(cls,xy=xy,edges=simplex_to_simplex)
         
-        print('Hexagonal grid constructed with {} points'.format(obj.graph.number_of_nodes()))
+        logging.debug('Hexagonal grid constructed with {} points'.format(obj.graph.number_of_nodes()))
         return obj
         
 

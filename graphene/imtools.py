@@ -6,14 +6,44 @@ Created on Wed Sep 25 13:43:54 2013
 """
 
 from . import scalespace
-#from visuals import *
-from scipy import ndimage
+import os.path
+
+from scipy import ndimage, misc
 from scipy.ndimage import morphology
 from scipy.interpolate import RectBivariateSpline
 from skimage.feature import peak_local_max
+from . import dm3lib_v099 as dm3lib
+import numpy as np
 import skimage
 
 from matplotlib.pyplot import *
+
+
+def read_image(filename):
+    """Read an image from the given filename. 
+    RGB images are converted to grayscale.
+    Image
+    
+    DM3 files are read using dm3lib. 
+    Other file types are read using scipy.misc.imread and divided by 255 to 
+    map to [0,1]."""
+    
+    _, ext = os.path.splitext(filename)
+    if ext=='.dm3':
+        DM3 = dm3image(filename)
+        im = DM3.image()
+    else:
+        im = misc.imread(filename)
+        # Map to [0,1]
+        im = im.astype(np.float32)/255
+    
+    if len(im.shape)==3:
+        im = rgb_to_gray(im)
+        
+    return im
+        
+        
+
 
 def image_interp(im,xy):
     """Interpolate values in im at xy[:,0],xy[:,1]."""
@@ -38,7 +68,9 @@ def blob_enhancement(im, blob_size):
     small_disk  = skimage.morphology.disk(0.25*blob_size)
     Y = contrast_enhancement(-intensity_stretch(si,3), disk)
     Y = contrast_enhancement(Y, disk)  # Repeat
+
     Y = morphology.filters.convolve(Y,small_disk/np.sum(small_disk)) # Circular average
+    
     
     return Y, si
     
@@ -60,7 +92,9 @@ def contrast_enhancement(im, se):
     adding the original image to the top-hat filtered image, 
     and then subtract the bottom-hat filtered image.
     A disk shaped element with radius disk_radius is used for structuring element.
-    Top hat filtering == white top hat filtering."""
+    Top hat filtering == white top hat filtering.
+    
+    Note: This is very slow for some reason."""
     
     return im + morphology.white_tophat(im,footprint=se) - morphology.black_tophat(im,footprint=se)
 
@@ -109,3 +143,20 @@ def fitquadratic(im,center,n):
     xymin = np.linalg.lstsq(B,rhs)[0]
     xymin += np.array([[center[1]],[center[0]]])
     return xymin, coef
+    
+
+
+class dm3image():
+    
+    """This class wraps the dm3lib.DM3 class"""
+        
+    def __init__(self, image_path):
+        """Initialize the DM3 image from the given path."""
+        self.dm3f = dm3lib.DM3(image_path)
+        
+    def image(self):
+        return self.dm3f.getImageData()
+        
+    def pixelsize(self):
+        pixelsize, unit = self.dm3f.getPixelSize()
+        return pixelsize, unit
