@@ -11,7 +11,7 @@ from scipy.spatial import Delaunay
 from scipy.linalg import norm
 from scipy import sparse
 import itertools
-from . import graphtools
+from . import graphtools, misc
 import networkx as nx
 import logging
 
@@ -47,14 +47,17 @@ class Grid:
     def edges(self):
         return self.graph.edges()            
     
-    def edge_lengths(self):
+    def edge_lengths(self,scale_xy=(1,1)):
         if self.graph.number_of_nodes()==0 or self.graph.number_of_edges()==0:
             raise NoEdgesException()
-        
-        edge_lengths = [norm(self.graph.node[edge[0]]['xy'] - self.graph.node[edge[1]]['xy']) for edge in self.graph.edges_iter()]
+
+        edge_lengths = [misc.weucl(self.graph.node[edge[0]]['xy'], self.graph.node[edge[1]]['xy'],scale_xy) for edge in self.graph.edges_iter()]
 #        bondlengths_px = [norm(self.atoms[edge[0],:]-self.atoms[edge[1],:]) for edge in self.atom_edges]
         return np.array(edge_lengths)
-       
+
+    def edge_orientations(self):
+        thetas = [misc.orientation(self.graph.node[edge[0]]['xy'], self.graph.node[edge[1]]['xy']) for edge in self.graph.edges_iter()]
+        return thetas
     
     """ Add zero-mean Gaussian random noise to the grid points """
     def add_noise(self,noise_std):

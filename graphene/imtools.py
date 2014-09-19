@@ -74,12 +74,27 @@ def blob_enhancement(im, blob_size):
     
     return Y, si
     
-def local_minima(im, blob_radius):
-    """Find local minima separated according to the given blob radius"""
+def local_minima(im, blob_radius, fitparabola=True):
+    """Find local minima separated according to the given blob radius.
+    
+    If fitparabola=True, sub-pixel precision is achieved by fitting a quadratic 
+    around each detected point.
+    
+    Returns the minima as row, column (i.e., y, x)
+    """
     
     X = ndimage.filters.gaussian_filter(im, blob_radius/3)   # Gaussian smoothing
     
     extrema = peak_local_max(X, blob_radius)
+
+    if fitparabola:
+        extrema = extrema.astype(np.float32)
+        for i, ext in enumerate(extrema):
+            try:
+                newxy, coef = fitquadratic(X,ext,9)     # Returns x,y 
+            except:
+                newxy = ext[::-1]           # Flip to x, y
+            extrema[i,:] = newxy[::-1].T    # flip to y, x
 
     return extrema
     

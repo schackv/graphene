@@ -15,6 +15,7 @@ import cmath
 
 from . import imtools
 
+
 class parameters:
     theta0 = []
     """Rotation"""
@@ -43,6 +44,10 @@ class parameters:
         self.fourier_distance = radius
         self.theta0 = angle      
         self.t      = 2*w/(3*radius)
+
+    def nm_per_pixel_est(self,CC_BOND_LENGTH=0.142):
+        """Estimate resolution by assuming that the CC bond length is known."""
+        return CC_BOND_LENGTH/self.t
         
       
 
