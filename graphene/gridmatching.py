@@ -24,7 +24,7 @@ def _saveplot(name,formats={'png','pdf'}):
         logging.debug('Writing {:s}'.format(fullname))
         plt.savefig(fullname)
 
-def main(file, settings_file=None, nm_per_pixel=None,output_dir=None, force_fresh=False, do_plot=False, plot_dir=None, loglevel="INFO"):
+def main(file, output_dir,settings_file=None, nm_per_pixel=None,force_fresh=False, do_plot=False, plot_dir=None, loglevel="INFO"):
     
     # Set logging level
     numeric_level = getattr(logging, loglevel.upper(), None)
@@ -48,6 +48,8 @@ def main(file, settings_file=None, nm_per_pixel=None,output_dir=None, force_fres
     
     # Make plots (if chosen)
     if do_plot:
+        if plot_dir is None:
+            plot_dir = os.path.join(output_dir,'plots')
         logging.info('Saving plots to {:s}'.format(plot_dir))
         make_plots(output_dir,plot_dir, nm_per_pixel=nm_per_pixel)
         logging.info('Done.')
@@ -141,10 +143,8 @@ def make_plots(result_dir,plot_dir,nm_per_pixel=None):
     plt.close()
     
     # CDF of oriented bond lengths
-    orientations = H.edge_orientations()
-    bin_centers, bin_idx = misc.circular_binning(orientations,half_circle=True)
-    for b, bin_center in enumerate(bin_centers):
-        oriented_lengths = [x for (x,idx) in zip(lengths_nm,bin_idx) if idx==b]
+    bin_centers, oriented_lengths_tuple = H.edge_lengths_by_orientation(lengths_nm)
+    for bin_center, oriented_lengths in zip(bin_centers,oriented_lengths_tuple):
         plt.figure()
         cdf_plot(oriented_lengths)
         bin_str = '{:.0f}'.format(np.rad2deg(bin_center))
@@ -152,6 +152,8 @@ def make_plots(result_dir,plot_dir,nm_per_pixel=None):
         _saveplot(pname('o{:s}_cdf_nm'.format(bin_str)))
         plt.close()
         print('Orientation {:.2f}: {:.5f} +/- {:.5f}'.format(np.rad2deg(bin_center),np.mean(oriented_lengths), np.std(oriented_lengths)))
+
+
 
 def cdf_plot(vals):
     xcdf, F = misc.ecdf(vals)

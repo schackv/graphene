@@ -56,8 +56,26 @@ class Grid:
         return np.array(edge_lengths)
 
     def edge_orientations(self):
+        """Return the orientations of each edge in radians."""
         thetas = [misc.orientation(self.graph.node[edge[0]]['xy'], self.graph.node[edge[1]]['xy']) for edge in self.graph.edges_iter()]
         return thetas
+        
+    def edge_lengths_by_orientation(self, scale_xy=(1,1), num_orientations=3, theta0 = np.pi/6):
+        """Get the edge lengths binned into num_orientations bins. 
+        The bins are equidistantly spaced from theta0 up til theta0+pi
+        
+        Returns bin_centers, oriented_lengths (num_orientations-tuple)
+        """
+
+        orientations = self.edge_orientations()
+        lengths = self.edge_lengths(scale_xy=scale_xy)
+        bin_centers, bin_idx = misc.circular_binning(orientations,half_circle=True,nbins=num_orientations*2, theta0=theta0)
+        
+        oriented_lengths = []
+        for b, bin_center in enumerate(bin_centers):
+            oriented_lengths.append(np.array([x for (x,idx) in zip(lengths,bin_idx) if idx==b]))
+            
+        return bin_centers, oriented_lengths
     
     """ Add zero-mean Gaussian random noise to the grid points """
     def add_noise(self,noise_std):
