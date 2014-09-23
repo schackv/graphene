@@ -24,10 +24,11 @@ def run():
 
     # Run analysis of all simulated images
     table = []
-    for file in sorted(files,key=lambda f: f['GroupId']):
+    for file in sorted(files,key=lambda f: int(f['GroupId'])):
         filepath = os.path.join(data_dir,file['Filename'])
         out = filepath + '_results'
-        graphene.gridmatching.main(filepath, output_dir=out)
+        
+        graphene.gridmatching.main(filepath, output_dir=out,force_fresh=False)
         
         # Read result and get stats
         nm_per_pixel = float(file[NM_X_LABEL]), float(file[NM_Y_LABEL])
@@ -43,11 +44,6 @@ def run():
         
     print(tabulate(table))
         
-        
-    
-
-
-
 
 def _getfiles(specfile):
     files = []

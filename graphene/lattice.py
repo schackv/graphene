@@ -51,11 +51,16 @@ class parameters:
         
       
 
-def powerspectrum(img):
+def powerspectrum(img, windowing=True):
     "Power spectrum of image"
-    F = fftpack.fft2(img)
+    if windowing:
+        window = np.hanning(img.shape[0])[:,np.newaxis]
+        F = fftpack.fft2(np.dot(window,window.T)*img)
+    else:
+        F = fftpack.fft2(img)
     F = fftpack.fftshift(F)
-    ps = np.abs(F)**2   
+    
+    ps = np.abs(F)**2
     return ps      
     
         

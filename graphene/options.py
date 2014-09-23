@@ -19,6 +19,7 @@ _annealing = {'T0': 4,
              'reps': 4,
              'nIt': 50}
              
-defaults = {'lattice': _lattice,
+defaults = {'image_border': 20,
+            'lattice': _lattice,
             'fine_adjustment': _fine_adjustment,
             'annealing': _annealing}

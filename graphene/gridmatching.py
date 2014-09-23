@@ -59,6 +59,8 @@ def process_image(filename, output_dir=None, opts={}):
     
     # Read image
     im = imtools.read_image(filename)
+    if opts['image_border'] is not None:
+        im = im[opts['image_border']:-opts['image_border'], opts['image_border']:-opts['image_border']]
     lp = lattice.parameters()
 
     lp.compute(im,opts['lattice'])
