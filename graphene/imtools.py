@@ -6,15 +6,20 @@ Created on Wed Sep 25 13:43:54 2013
 """
 
 from . import scalespace
+import logging
 import os.path
 
 from scipy import ndimage, misc
 from scipy.ndimage import morphology
 from scipy.interpolate import RectBivariateSpline
 from skimage.feature import peak_local_max
-from . import dm3lib_v099 as dm3lib
 import numpy as np
 import skimage
+
+try:
+    from . import dm3lib_v099 as dm3lib
+except ImportError:
+    logging.warning('dm3lib_v099 not available. You will not be able to read .dm3 files. See README.md for how to get this module.')
 
 from matplotlib.pyplot import *
 
