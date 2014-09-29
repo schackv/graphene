@@ -26,7 +26,7 @@ class Grid:
         self.xy = xy
         for id, pos in enumerate(xy):
             self.graph.add_node(id,xy=pos)
-        self.graph.add_edges_from(edges)      
+        self.graph.add_edges_from(edges)    
        
     @classmethod
     def from_textfile(cls, filename):
@@ -47,9 +47,12 @@ class Grid:
     def edges(self):
         return self.graph.edges()            
     
-    def edge_lengths(self,scale_xy=(1,1)):
+    def edge_lengths(self,scale_xy=None):
         if self.graph.number_of_nodes()==0 or self.graph.number_of_edges()==0:
             raise NoEdgesException()
+        
+        if scale_xy is None:
+            scale_xy = (1,1)
 
         edge_lengths = [misc.weucl(self.graph.node[edge[0]]['xy'], self.graph.node[edge[1]]['xy'],scale_xy) for edge in self.graph.edges_iter()]
 #        bondlengths_px = [norm(self.atoms[edge[0],:]-self.atoms[edge[1],:]) for edge in self.atom_edges]
@@ -60,7 +63,7 @@ class Grid:
         thetas = [misc.orientation(self.graph.node[edge[0]]['xy'], self.graph.node[edge[1]]['xy']) for edge in self.graph.edges_iter()]
         return thetas
         
-    def edge_lengths_by_orientation(self, scale_xy=(1,1), num_orientations=3, theta0 = np.pi/6):
+    def edge_lengths_by_orientation(self, scale_xy=None, num_orientations=3, theta0 = np.pi/6):
         """Get the edge lengths binned into num_orientations bins. 
         The bins are equidistantly spaced from theta0 up til theta0+pi
         
@@ -96,6 +99,13 @@ class Grid:
         from matplotlib import collections  as mc
         plt.plot(self.xy[:,0],self.xy[:,1],'.',color=color,ms=markersize)
         plt.gca().add_collection(mc.LineCollection(self.line_collection(),colors=linecolor))
+        plt.axis('image')
+    
+    def plot_color(self, stretch_range=[0.127,0.157], scale_xy=None):
+        import matplotlib.pyplot as plt
+        from matplotlib import collections  as mc
+        linergb = misc.color_range(self.edge_lengths(scale_xy=scale_xy), stretch_range)
+        plt.gca().add_collection(mc.LineCollection(self.line_collection(),colors=linergb))
         plt.axis('image')
 
     def line_collection(self):

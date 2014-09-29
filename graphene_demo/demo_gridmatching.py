@@ -23,7 +23,7 @@ import pickle
 def demo_gridmatching():
     
     filename = 'graphene_regular.dm3'
-#    filename = r'E:\dtu\phd\graphene\simulated_images\Perfect-2_dE03eV_Cs-0002mm_df-3mm_0142.png'
+
     ## Read DM3 image
     im = imtools.read_image(filename)
     im = imtools.crop(im,601,1100,601,1100)

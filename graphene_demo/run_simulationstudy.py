@@ -1,7 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Sep 19 15:43:43 2014
+Simulation studies processing. Fits a grid to each image, extracts bond lengths,
+calculates deviation from expected bond length and prints out a table with results.
 
+The expected bond lengths expect that the simulated images are scaled along the 
+y-axis only, but this can easily be modified.
+
+NB: Depends on simulated images and a .csv file with the following column names
+for each simulated image:
+
+'Filename':                         Filename of image
+'GroupId':                          Integer, only used for sorting the final table (low to high)
+'Horizontal resolution [nm/px]':    Image resolution in x-direction
+'Vertical resolution [nm/px]':      Image resolution in y-direction
+'Vertical':                         Expected bond length for the vertical bonds
+'Other':                            Expected bond lengths for the two other bond orientations
+
+Created on Fri Sep 19 15:43:43 2014
 @author: jsve
 """
 
@@ -11,7 +26,7 @@ import numpy as np
 import graphene.gridmatching
 from tabulate import tabulate
 
-data_dir = r'E:\dtu\phd\graphene\simulated_images'
+data_dir = './simulated_images'     # Suggestion for use: Create a symbolic link with this name to the actual folder
 
 # Field names from csv file
 NM_X_LABEL = 'Horizontal resolution [nm/px]'

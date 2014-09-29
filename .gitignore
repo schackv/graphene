@@ -1,5 +1,9 @@
 graphene/dm3lib_v099.py
 graphene_demo/graphene
+graphene_demo/hole_data
+graphene_demo/regular_data
+graphene_demo/simulated_images
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -17,6 +17,7 @@ from . import options, misc, grid, bgm, imtools, lattice, alternating_graphcut
 
 
 INFO_FILENAME = r'info.txt'
+OPTIONS_FILENAME = r'options.txt'
 
 def _saveplot(name,formats={'png','pdf'}):
     for f in formats:
@@ -24,7 +25,7 @@ def _saveplot(name,formats={'png','pdf'}):
         logging.debug('Writing {:s}'.format(fullname))
         plt.savefig(fullname)
 
-def main(file, output_dir,settings_file=None, nm_per_pixel=None,force_fresh=False, do_plot=False, plot_dir=None, loglevel="INFO"):
+def main(file, output_dir,settings_file=None, nm_per_pixel=None,force_fresh=False, do_plot=False, plot_dir=None, roi=None, loglevel="INFO"):
     
     # Set logging level
     numeric_level = getattr(logging, loglevel.upper(), None)
@@ -59,7 +60,11 @@ def process_image(filename, output_dir=None, opts={}):
     
     # Read image
     im = imtools.read_image(filename)
-    if opts['image_border'] is not None:
+    if opts['roi'] is not None:
+        roi = np.array(opts['roi'])
+        im = imtools.crop(im,np.min(roi[:,0]),np.max(roi[:,0]), np.min(roi[:,1]),np.max(roi[:,1]) )
+        
+    if opts['image_border'] is not None and opts['image_border'] != 0:
         im = im[opts['image_border']:-opts['image_border'], opts['image_border']:-opts['image_border']]
     lp = lattice.parameters()
 
@@ -111,6 +116,7 @@ def make_plots(result_dir,plot_dir,nm_per_pixel=None):
     os.makedirs(plot_dir,exist_ok=True)
     
     info = misc._readdict(os.path.join(result_dir,INFO_FILENAME))
+    opts = misc._readdict(os.path.join(result_dir,OPTIONS_FILENAME))
     
     if nm_per_pixel is None:
         nm_per_pixel = info['nm_per_pixel_est']
@@ -120,6 +126,11 @@ def make_plots(result_dir,plot_dir,nm_per_pixel=None):
     
     # Read image
     im = imtools.read_image(os.path.join(result_dir,info['filename']))
+    
+    if opts['roi'] is not None:
+        roi = np.array(opts['roi'])
+        im = imtools.crop(im,np.min(roi[:,0]),np.max(roi[:,0]), np.min(roi[:,1]),np.max(roi[:,1]) )
+        
     
     # Write image of fitted grid
     G = grid.Grid.from_textfile(os.path.join(result_dir,'tri_final'))
@@ -137,6 +148,13 @@ def make_plots(result_dir,plot_dir,nm_per_pixel=None):
     _saveplot(pname('atoms'))
     plt.close()
     
+    # Write hexagonal grid with colored bonds
+    plt.figure()
+    plt.imshow(im,cmap=plt.cm.gray,interpolation='nearest')
+    H.plot_color(scale_xy=info['nm_per_pixel_est'])
+    _saveplot(pname('atoms_colored'))
+    plt.close()
+    
     # CDF of bond lengths
     lengths_nm = H.edge_lengths(nm_per_pixel)
     plt.figure()
@@ -145,7 +163,7 @@ def make_plots(result_dir,plot_dir,nm_per_pixel=None):
     plt.close()
     
     # CDF of oriented bond lengths
-    bin_centers, oriented_lengths_tuple = H.edge_lengths_by_orientation(lengths_nm)
+    bin_centers, oriented_lengths_tuple = H.edge_lengths_by_orientation(info['nm_per_pixel_est'])
     for bin_center, oriented_lengths in zip(bin_centers,oriented_lengths_tuple):
         plt.figure()
         cdf_plot(oriented_lengths)

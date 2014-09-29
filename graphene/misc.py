@@ -9,7 +9,7 @@ Created on Thu Sep 18 19:41:13 2014
 
 import numpy as np
 import json
-    
+from colorsys import hsv_to_rgb
 def ecdf(x):
     sorted_x=np.sort( x )
     yvals=np.arange(len(sorted_x))/float(len(sorted_x))
@@ -53,6 +53,18 @@ def circular_binning(angles,nbins=6,theta0=np.pi/6,half_circle=False):
         
     return bin_centers, bin_idx
 
+def color_range(vals, value_range):
+    """Get RGB equivalents of the values, where values are interpolated
+    between value_range[0] and value_range[1] from blue to red.
+    """
+    
+    vals[vals<value_range[0]]=value_range[0]
+    vals[vals>value_range[1]]=value_range[1]
+    
+    hue_range = [2/3, 0]
+    hues = (vals-value_range[0])/(value_range[1]-value_range[0]) * (hue_range[1]-hue_range[0]) + hue_range[0]
+    rgb = [hsv_to_rgb(h,1,1) for h in hues]
+    return rgb
 
 def _readdict(filename):
     """Read a dictionary from file using JSON."""
