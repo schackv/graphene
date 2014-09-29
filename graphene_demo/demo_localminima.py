@@ -13,13 +13,15 @@ import matplotlib.pyplot as plt
 
 def demo_localminima():
         
+    opts = options.defaults
+    
     ## Read DM3 image
-    DM3 = io.dm3image('graphene_regular.dm3')
-    im = imtools.crop(DM3.image(),601,1100,601,1100)
+    im = imtools.read_image('graphene_regular.dm3')
+    im = imtools.crop(im,601,1100,601,1100)
         
     ## Estimate parameters of lattice
     lp = lattice.parameters()
-    lp.compute(im,options.lattice)
+    lp.compute(im,opts['lattice'])
     print('Estimated hexagonal side length in pixels = {:8f}'.format(lp.t))
     
     # Get local minima  

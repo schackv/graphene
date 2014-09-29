@@ -23,7 +23,8 @@ import pickle
 def demo_gridmatching():
     
     filename = 'graphene_regular.dm3'
-
+    opts = options.defaults
+    
     ## Read DM3 image
     im = imtools.read_image(filename)
     im = imtools.crop(im,601,1100,601,1100)
@@ -34,7 +35,7 @@ def demo_gridmatching():
     
     ## Estimate parameters of lattice
     lp = lattice.parameters()
-    lp.compute(im,options.lattice)
+    lp.compute(im,opts['lattice'])
     print('Estimated hexagonal side length in pixels = {:8f}'.format(lp.t))
     
     ## Initial points
@@ -59,7 +60,7 @@ def demo_gridmatching():
     xy_old = G.xy.copy()
     cs = bgm.welsh_powell(G.edges())
     model = bgm.AdaptiveGrid(im, G.edges(), G.simplices) 
-    xy_hat, E, history = bgm.fit_grid(im,G.xy, G.edges(), coding_scheme=cs, beta=0.7, gridenergydefinition=model, opts=options.annealing)
+    xy_hat, E, history = bgm.fit_grid(im,G.xy, G.edges(), coding_scheme=cs, beta=0.99, gridenergydefinition=model, anneal_opts=opts['annealing'])
     G.xy = xy_hat
     # Save result to file
     pickle.dump((im,G,history),open('result.pic','wb'))
@@ -82,15 +83,13 @@ def demo_gridmatching():
     plt.ylabel('Energy')
     plt.show(block=False)
 
-
-#    im, G, history = pickle.load(open('result.pic','rb'))
-
     # Place atoms
     H = grid.HexagonalGrid.from_triangular(G)
     lengths = H.edge_lengths()
     lengths_nm = lengths * 0.0115 # [nm/pixel]
     print('Bond lengths [px] = {:.6f} +/- {:.6f}'.format(np.mean(lengths),np.std(lengths)))
     
+    ## Plots
     plt.figure()
     lc = mc.LineCollection(H.line_collection(),colors='k')
     plt.gca().add_collection(lc)

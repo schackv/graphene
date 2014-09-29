@@ -19,7 +19,7 @@ def demo_latticeinfo():
     """
     
     ## Read DM3 image
-    DM3 = io.dm3image('graphene_regular.dm3')
+    DM3 = imtools.dm3image('graphene_regular.dm3')
     im = DM3.image()
     pixelsize, unit = DM3.pixelsize()
     print('Scale according to metadata = {:8f} {:s} per pixel'.format(pixelsize,unit))
@@ -31,7 +31,7 @@ def demo_latticeinfo():
     
     ## Estimate parameters of lattice
     lp = lattice.parameters()
-    lp.compute(im,options.lattice)
+    lp.compute(im,options.defaults['lattice'])
     print('Estimated hexagonal side length in pixels = {:8f}'.format(lp.t))
     print('Rotation in Fourier space = {:4f} radians = {:2f} degrees'.format(lp.theta0, np.rad2deg(lp.theta0)))
         

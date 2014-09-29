@@ -18,7 +18,8 @@ from scipy.linalg import norm
 
 def demo_simplegrid():
         
-   
+    opts = options.defaults         # Default parameters
+    
     t = 12
     ## Simulate small image
     im, G = simulation.simulate_image(10,5,t,theta=0.4*np.pi )
@@ -52,7 +53,7 @@ def demo_simplegrid():
     
     # Setup an adaptive grid model
     model = bgm.AdaptiveGrid(im, G.edges(), G.simplices) 
-    xy_hat, E, history = bgm.fit_grid(im,G.xy, G.edges(), coding_scheme=cs, beta=0, gridenergydefinition=model, opts=options.annealing )
+    xy_hat, E, history = bgm.fit_grid(im,G.xy, G.edges(), coding_scheme=cs, beta=0, gridenergydefinition=model, anneal_opts=opts['annealing'])
     G_fit = grid.TriangularGrid(xy_hat,G.edges())
     
     for e in G_fit.graph.edges_iter():
