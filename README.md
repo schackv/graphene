@@ -15,11 +15,14 @@ Structure identification in high-resolution transmission electron microscopy ima
 
 External dependencies
 ============
-This package uses dm3lib_v099.py to read DM3 files. Download it from
+This package uses dm3lib_v099.py to read DM3 files. A Python 3.x version of this
+file is included as graphene/dm3lib_v099.py. 
 
-https://code.google.com/p/diffraction-ring-profiler/source/browse/dm3lib_v099.py
+All credit goes to the author of the library at 
 
-and put it in the graphene/ folder.
+https://code.google.com/p/diffraction-ring-profiler
+
+where the original version of dm3lib_v099.py can be found.
 
 
 Parameter tuning notes
